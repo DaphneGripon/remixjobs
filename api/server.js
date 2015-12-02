@@ -2,6 +2,11 @@ var express = require('express');
 var router = express.Router();
 var app = express();
 var Student = require('./models/students');
+var mongoose = require('mongoose');
+var ObjectID = require('mongodb').ObjectID
+
+//Lets connect to our database using the DB server URL.
+mongoose.connect('mongodb://localhost/remixjobs');
 
 // test route to make sure everything is working
 router.get('/', function(req, res) {
@@ -13,16 +18,37 @@ router.get('/', function(req, res) {
 router.route('/students')
   .post(function(req, res) {
     var student = new Student();
-    student.name = req.body.name;
-    student.intern = req.body.intern;
-    student.grade = req.body.grade;
+    var s_id = new ObjectID();
+    student._id = s_id;
+    student.name = "daphne";
+    student.intern = "hallo";
+    student.grade = "20";
     student.save(function(err) {
       if (err) {
         res.send(err);
       }
-      res.json({ message: 'Student created!' });
+      res.json({ message: 'Student created!', id: s_id});
+    });
+  })
+  .get(function(req, res) {
+    Student.find(function(err, students) {
+      if (err) {
+        res.send(err);
+      }
+
+      res.json(students);
     });
   });
+
+router.route('/students/:student_id')
+.get(function(req, res) {
+  Student.findById(req.params.student_id, function(err, student) {
+      if (err){
+        res.send(err);
+      }
+      res.json(student);
+  });
+});
 
 // more routes for our API will happen here
 
