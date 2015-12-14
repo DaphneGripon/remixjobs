@@ -11,7 +11,9 @@ var jobSchema   = new Schema({
     description: String,
     contract: String,
     date: Date,
-    tags: { type: [String], index: true } 
+    tags: { type: [String], index: true },
+    created_at: { type: Date, default: Date.now },
+    updated_at: { type: Date, default: Date.now },
 });
 
 module.exports = mongoose.model('Job', jobSchema);
