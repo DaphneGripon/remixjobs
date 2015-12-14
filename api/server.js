@@ -1,11 +1,15 @@
+//LIBS
 var express = require('express');
 var remixjobs = express.Router();
 var util = require('util');
 var app = express();
 var bodyParser = require('body-parser');
-var Student = require('./models/students');
 var mongoose = require('mongoose');
 var ObjectID = require('mongodb').ObjectID;
+
+//DATABASE TABLE SCHEMAS
+var Student = require('./models/students');
+var Job = require('./models/jobs');
 
 
 app.use(bodyParser.urlencoded({
@@ -100,11 +104,13 @@ remixjobs.route('/students/:student_id')
 
 remixjobs.route('/jobs')
 .get(function(req, res) {
-  var message =
-  {
-    'message' : 'Not yet implemented'
-  };
-  res.status(501).json(message);
+  Job.find(function(err, jobs) {
+    if (err) {
+      res.send(err);
+    }
+
+    res.status(200).json(jobs);
+  });
 })
 .post(function(req, res) {
   var message =
@@ -123,11 +129,17 @@ remixjobs.route('/jobs')
 
 remixjobs.route('/jobs/:job_id')
 .get(function(req, res) {
-  var message =
-  {
-    'message' : 'Not yet implemented'
-  };
-  res.status(501).json(message);
+  Job.findById(req.params.job_id, function(err, job) {
+      if (err){
+        res.send(err);
+      }
+      if(job == null)
+        job =
+        {
+          'message' : 'Aucun résultat trouvé.'
+        };
+      res.json(job);
+  });
 });
 
 remixjobs.route('/jobs/latest')
@@ -148,7 +160,6 @@ remixjobs.route('/companies')
   res.status(501).json(message);
 });
 
-// more routes for our API will happen here
 
 // REGISTER OUR ROUTES -------------------------------
 // all of our routes will be prefixed with /api
@@ -157,8 +168,7 @@ app.listen(3000, function(){
 	console.log('listening on port *:3000');
 });
 
-function checkFields(body)
-{
+function checkFields(body){
     var OK = true;
     if(body == null || body == undefined)
     {
