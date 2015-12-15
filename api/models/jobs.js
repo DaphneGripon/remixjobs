@@ -11,9 +11,22 @@ var jobSchema   = new Schema({
     description: String,
     contract: String,
     date: Date,
-    tags: { type: [String], index: true },
+    tags: { type: [String] },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now },
 });
 
 module.exports = mongoose.model('Job', jobSchema);
+
+
+//TEST JOB POST ON Postman
+// {
+//     "title": "test job title",
+//     "company" : "test job company",
+//     "localization" : "test job localization",
+//     "category" : "test job category",
+//     "description" : "test job description",
+//     "contract" : "test job contract",
+//     "date" : "2015-11-05",
+//     "tags" : ["javascript", "android"]
+// }

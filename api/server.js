@@ -23,83 +23,8 @@ mongoose.connect('mongodb://localhost/remixjobs');
 // test route to make sure everything is working
 remixjobs.get('/', function(req, res) {
     res.json({
-      message: 'Welcome to Students API',
+      message: 'Welcome to the unofficial RemixJobs API',
     });
-});
-
-remixjobs.route('/students')
-  .post(function(req, res) {
-    var body = req.body;
-    var student = new Student();
-    var s_id = new ObjectID();
-    var fieldsValid = checkFields(req.body);
-
-    student._id = s_id;
-    if(body != undefined)
-    {
-      student.name = req.body.name;
-      student.intern = req.body.intern;
-      student.grade = req.body.grade;
-    }
-
-    var student_info = {
-      "name" : student.name == undefined ? "Undefined" : student.name,
-      "intern" : student.intern == undefined ? "Undefined" : student.intern,
-      "grade" : student.grade == undefined ? "Undefined" : student.grade,
-    };
-
-    // console.log("student_info:"+util.inspect(student_info, {showHidden: false, depth: null}));
-
-    if(!fieldsValid)
-    {
-      res.status(400).json(
-        {
-          message: 'No student created. You did not send enough information to create that student.',
-          data: student_info
-        }
-      );
-    }
-    else {
-        student.save(function(err) {
-          if (err) {
-            res.send(err);
-          }
-          res.status(201).json(
-            {
-              'message': 'Student created!',
-              'id': s_id,
-              'student_info': student_info==undefined?'undefined':student_info,
-            }
-          );
-        });
-    }
-  } )
-  .delete(function(req, res) {
-    Student.remove(function(err) {
-      if (err) {
-        res.send(err);
-      }
-      res.json({ message: 'Students removed!' });
-    });
-  })
-  .get(function(req, res) {
-    Student.find(function(err, students) {
-      if (err) {
-        res.send(err);
-      }
-
-      res.json(students);
-    });
-  });
-
-remixjobs.route('/students/:student_id')
-.get(function(req, res) {
-  Student.findById(req.params.student_id, function(err, student) {
-      if (err){
-        res.send(err);
-      }
-      res.json(student);
-  });
 });
 
 remixjobs.route('/jobs')
@@ -113,51 +38,139 @@ remixjobs.route('/jobs')
   });
 })
 .post(function(req, res) {
-  var message =
-  {
-    'message' : 'Not yet implemented'
-  };
-  res.status(501).json(message);
-})
-.put(function(req, res) {
-  var message =
-  {
-    'message' : 'Not yet implemented'
-  };
-  res.status(501).json(message);
+  var body = req.body;
+  var fieldsValid = checkJobFields(body);
+
+  var j_id = new ObjectID();
+  var job = fillJob(body);
+  job._id = j_id;
+  var job_info = fillJobJson(job);
+
+  if(!fieldsValid){
+    res.status(400).json({
+        message: 'No job created. You did not send enough information to create that job.',
+        data: job_info
+      }
+    );
+  }
+  else {
+      job.save(function(err) {
+        if (err) {
+          res.send(err);
+        }
+        res.status(201).json({
+            'message': 'Job created!',
+            'id': j_id,
+            'job_info': checkUndefined(job_info),
+          }
+        );
+      });
+  }
 });
 
-remixjobs.route('/jobs/:job_id')
+remixjobs.route('/jobs/:page')
 .get(function(req, res) {
-  Job.findById(req.params.job_id, function(err, job) {
-      if (err){
-        res.send(err);
+  if(req.params.page === 'latest'){
+    Job.find().limit(10).exec(function(err, jobs) {
+        if (err){
+          res.send(err);
+        }
+        else if(jobs == null){
+          jobs =
+          {
+            'message' : 'Aucun résultat trouvé.'
+          };
+        }
+        res.json(jobs);
+    });
+  }
+  else{
+    var job_id = req.params.page;
+    Job.findById(job_id, function(err, job) {
+        if (err){
+          res.send(err);
+        }
+        if(job == null)
+          job =
+          {
+            'message' : 'Aucun résultat trouvé.'
+          };
+        res.json(job);
+    });
+  }
+})
+.put(function(req, res) {
+  var body = req.body;
+
+  var job = fillJob(body);
+  job._id = req.params.page;
+  var job_info = fillJobJson(job);
+
+  Job.update({'_id':job._id}, job.toObject(), { multi: false }, function(err, raw) {
+    if (err) {
+      res.send(err);
+    }
+    res.status(201).json({
+        'message': 'Job updated!',
+        'id': job._id,
+        'original_data': raw,
       }
-      if(job == null)
-        job =
-        {
-          'message' : 'Aucun résultat trouvé.'
-        };
-      res.json(job);
+    );
   });
 });
 
-remixjobs.route('/jobs/latest')
-.get(function(req, res) {
-  var message =
-  {
-    'message' : 'Not yet implemented'
-  };
-  res.status(501).json(message);
-});
+// remixjobs.route('/jobs/latest')
+// .get(function(req, res) {
+//   res.json({'hein':'what'});
+// });
 
 remixjobs.route('/companies')
 .get(function(req, res) {
-  var message =
-  {
-    'message' : 'Not yet implemented'
-  };
-  res.status(501).json(message);
+  Job.find().distinct('company', function(err, jobs) {
+      if (err){
+        res.send(err);
+      }
+      else if(jobs == null){
+        jobs =
+        {
+          'message' : 'Aucun résultat trouvé.'
+        };
+      }
+      res.json(jobs);
+  });
+});
+remixjobs.route('/companies/:id_company')
+.get(function(req, res) {
+  Job.find({'company': req.params.id_company,})
+  .distinct('company', function(err, jobs) {
+      if (err){
+        res.send(err);
+      }
+      else if(jobs == null){
+        jobs =
+        {
+          'message' : 'Aucun résultat trouvé.'
+        };
+      }
+      res.json(jobs);
+  });
+});
+
+
+remixjobs.route('/companies/:id_company/jobs')
+.get(function(req, res) {
+  Job.find({'company': req.params.id_company,}).exec(function(err, jobs) {
+      if (err){
+        res.send(err);
+      }
+      else if(jobs == null){
+        jobs =
+        {
+          'message' : 'Aucun résultat trouvé.'
+        };
+      }
+      res.json(jobs);
+  });
 });
 
 
@@ -168,7 +181,50 @@ app.listen(3000, function(){
 	console.log('listening on port *:3000');
 });
 
-function checkFields(body){
+
+//METHODS
+function fillJob(body){
+  var job = new Job();
+  if(body != undefined)
+  {
+    if(checkUndefined(body.title) !== 'undefined')
+      job.title         = body.title;
+    if(checkUndefined(body.company) !== 'undefined')
+    job.company       = body.company;
+    if(checkUndefined(body.localization) !== 'undefined')
+    job.localization  = body.localization;
+    if(checkUndefined(body.category) !== 'undefined')
+    job.category      = body.category;
+    if(checkUndefined(body.description) !== 'undefined')
+    job.description   = body.description;
+    if(checkUndefined(body.contract) !== 'undefined')
+    job.contract      = body.contract;
+    if(checkUndefined(body.date) !== 'undefined')
+    job.date          = body.date;
+    if(checkUndefined(body.tags) !== 'undefined')
+    job.tags          = body.tags;
+  }
+  return job;
+}
+
+function fillJobJson(job){
+  var job_info;
+  if(job != null){
+    job_info = {
+      "title" : checkUndefined(job.title),
+      "company" : checkUndefined(job.company),
+      "localization" : checkUndefined(job.localization),
+      "category" : checkUndefined(job.category),
+      "description" : checkUndefined(job.description),
+      "contract" : checkUndefined(job.contract),
+      "date" : checkUndefined(job.date),
+      "tags" : checkUndefined(job.tags),
+    };
+  }
+  return job_info;
+}
+
+function checkStudentFields(body){
     var OK = true;
     if(body == null || body == undefined)
     {
@@ -181,6 +237,36 @@ function checkFields(body){
       if(body.grade == null || body.grade == undefined)
         OK = false;
       if(body.intern == null || body.intern == undefined)
+        OK = false;
+    }
+    return OK;
+}
+
+function checkUndefined(field){
+  return (field == undefined) || (field == null) ? "undefined" : field;
+}
+
+function checkJobFields(body){
+    var OK = true;
+    if(body == null || body == undefined)
+    {
+      OK = false;
+    }
+    else
+    {
+      if(body.title == null || body.title == undefined)
+        OK = false;
+      if(body.company == null || body.company == undefined)
+        OK = false;
+      if(body.localization == null || body.localization == undefined)
+        OK = false;
+      if(body.category == null || body.category == undefined)
+        OK = false;
+      if(body.contract == null || body.contract == undefined)
+        OK = false;
+      if(body.date == null || body.date == undefined)
+        OK = false;
+      if(body.tags == null || body.tags == undefined)
         OK = false;
     }
     return OK;
