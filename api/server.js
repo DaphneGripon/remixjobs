@@ -27,6 +27,13 @@ remixjobs.get('/', function(req, res) {
     });
 });
 
+/*
+* @route : /jobs
+* GET : returns all the jobs on remixjobs.com
+* POST : creates a new job in the database
+*   @params : title, company, localization, description, category, tags, date,
+              contract
+*/
 remixjobs.route('/jobs')
 .get(function(req, res) {
   Job.find(function(err, jobs) {
@@ -68,6 +75,14 @@ remixjobs.route('/jobs')
   }
 });
 
+/*
+* @route /jobs/:page
+* GET : if :page is an iD -> returns the information of a specific job
+        if :page === 'latest' -> returns the 20 latest jobs in the database
+* PUT : updates a job with the :page param, which is the job iD in the database
+*   @params : title OR company OR localization OR description OR category
+              OR ags OR date OR contract
+*/
 remixjobs.route('/jobs/:page')
 .get(function(req, res) {
   if(req.params.page === 'latest'){
@@ -119,11 +134,10 @@ remixjobs.route('/jobs/:page')
   });
 });
 
-// remixjobs.route('/jobs/latest')
-// .get(function(req, res) {
-//   res.json({'hein':'what'});
-// });
-
+/*
+* @route /companies
+* GET : returns a list of all the companies which have posted a job search
+*/
 remixjobs.route('/companies')
 .get(function(req, res) {
   Job.find().distinct('company', function(err, jobs) {
@@ -139,6 +153,11 @@ remixjobs.route('/companies')
       res.json(jobs);
   });
 });
+
+/*
+* @route /companies/:id_company
+* GET : Returns the information of a specific company, with the id :id_company
+*/
 remixjobs.route('/companies/:id_company')
 .get(function(req, res) {
   Job.find({'company': req.params.id_company,})
@@ -156,7 +175,11 @@ remixjobs.route('/companies/:id_company')
   });
 });
 
-
+/*
+* @route /companies/:id_company/jobs
+* GET : Returns all the jobs posted by a specific company,
+        thanks to its id :id_company
+*/
 remixjobs.route('/companies/:id_company/jobs')
 .get(function(req, res) {
   Job.find({'company': req.params.id_company,}).exec(function(err, jobs) {
@@ -183,6 +206,12 @@ app.listen(3000, function(){
 
 
 //METHODS
+
+/*
+* @function returns a Job object, filled out with the parameters in the body
+* @param : body : the name of the variable containing all the job information
+                  here it is intended to be req.body from the routes
+*/
 function fillJob(body){
   var job = new Job();
   if(body != undefined)
@@ -207,6 +236,10 @@ function fillJob(body){
   return job;
 }
 
+/*
+* @function returns a JSON object, filled out with the job information
+* @param : Job job : the name of the job Object to be displayed
+*/
 function fillJobJson(job){
   var job_info;
   if(job != null){
@@ -224,6 +257,12 @@ function fillJobJson(job){
   return job_info;
 }
 
+/*
+* @function returns true if the required fields (name, grade, intern)
+            to create a student have been filled out, false otherwise.
+* @param : body : the name of the variable containing all the student
+                  information here it is intended to be req.body from the routes
+*/
 function checkStudentFields(body){
     var OK = true;
     if(body == null || body == undefined)
@@ -242,10 +281,22 @@ function checkStudentFields(body){
     return OK;
 }
 
+/*
+* @function Returns the object value if it's not null or undefined.
+            Returns "undefined" if it is null or undefined.
+* @param : field : the object to be checked for null or undefined value
+*/
 function checkUndefined(field){
   return (field == undefined) || (field == null) ? "undefined" : field;
 }
 
+/*
+* @function returns true if the required fields (title, company, localization,
+            category, contract, date, tags) to create a job have been filled
+            out, false otherwise.
+* @param : body : the name of the variable containing all the student
+                  information here it is intended to be req.body from the routes
+*/
 function checkJobFields(body){
     var OK = true;
     if(body == null || body == undefined)
