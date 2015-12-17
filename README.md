@@ -17,7 +17,8 @@ Today, no (un)official API was developed to allow developers to add jobs in thei
 
 ## Instructions
 
-First, if you haven't already, start the scrapping process, by typing "node scrapper.js".
+Before you do anything, start mongodb on your terminal.
+Then, start the scrapping process, by typing "node scrapper.js".
 Once it is finished, you can start the API server by typing "node server.js".
 TADA ! Now you can try out some of the requests via postman.
 
