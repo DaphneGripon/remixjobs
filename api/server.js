@@ -30,19 +30,37 @@ remixjobs.get('/', function(req, res) {
 /*
 * @route : /jobs
 * GET : returns all the jobs on remixjobs.com
+    @params : all parameters are optionnal.
+      They should be passed in the req.body and their names should be one, or
+      several from the following lists : title, company, localization,
+          category, tags, date, contract
 * POST : creates a new job in the database
 *   @params : title, company, localization, description, category, tags, date,
               contract
 */
 remixjobs.route('/jobs')
 .get(function(req, res) {
-  Job.find(function(err, jobs) {
-    if (err) {
-      res.send(err);
-    }
+  var params = req.query;
+  var query = getQueryJson(params);
+  if(query != {})
+  {
+    Job.find(query, function(err, jobs) {
+      if (err) {
+        res.send(err);
+      }
 
-    res.status(200).json(jobs);
-  });
+      res.status(200).json(jobs);
+    });
+  }
+  else {
+    Job.find(function(err, jobs) {
+      if (err) {
+        res.send(err);
+      }
+
+      res.status(200).json(jobs);
+    });
+  }
 })
 .post(function(req, res) {
   var body = req.body;
@@ -219,19 +237,19 @@ function fillJob(body){
     if(checkUndefined(body.title) !== 'undefined')
       job.title         = body.title;
     if(checkUndefined(body.company) !== 'undefined')
-    job.company       = body.company;
+      job.company       = body.company;
     if(checkUndefined(body.localization) !== 'undefined')
-    job.localization  = body.localization;
+      job.localization  = body.localization;
     if(checkUndefined(body.category) !== 'undefined')
-    job.category      = body.category;
+      job.category      = body.category;
     if(checkUndefined(body.description) !== 'undefined')
-    job.description   = body.description;
+      job.description   = body.description;
     if(checkUndefined(body.contract) !== 'undefined')
-    job.contract      = body.contract;
+      job.contract      = body.contract;
     if(checkUndefined(body.date) !== 'undefined')
-    job.date          = body.date;
+      job.date          = body.date;
     if(checkUndefined(body.tags) !== 'undefined')
-    job.tags          = body.tags;
+      job.tags          = body.tags;
   }
   return job;
 }
@@ -287,7 +305,9 @@ function checkStudentFields(body){
 * @param : field : the object to be checked for null or undefined value
 */
 function checkUndefined(field){
-  return (field == undefined) || (field == null) ? "undefined" : field;
+  var result = (field == undefined) || (field == null) ? "undefined" : field;
+  // console.log(result);
+  return result;
 }
 
 /*
@@ -321,4 +341,47 @@ function checkJobFields(body){
         OK = false;
     }
     return OK;
+}
+
+/*
+* @function returns the query to be used for searching jobs
+* @param : params : the name of the variable containing all the job
+                    information here it is intended to be req.params
+                    from the routes
+*/
+function getQueryJson(params){
+  var query = {};
+  if(checkUndefined(params) !== 'undefined')
+  {
+
+    //title
+    if(checkUndefined(params.title) !== 'undefined')
+      query["title"] = { "$regex": params.title, "$options": "i" }
+
+    //company
+    if(checkUndefined(params.company) !== 'undefined')
+      query["company"] = { "$regex": params.company, "$options": "i" }
+
+    //tags
+    if(checkUndefined(params.tags) !== 'undefined')
+      query["tags"] = { "$regex": params.tags, "$options": "i" }
+
+    //localization
+    if(checkUndefined(params.localization) !== 'undefined')
+      query["localization"] = { "$regex": params.localization, "$options": "i" }
+
+    //contract
+    if(checkUndefined(params.contract) !== 'undefined')
+      query["contract"] = { "$regex": params.contract, "$options": "i" }
+
+    //date
+    if(checkUndefined(params.date) !== 'undefined')
+      query["date"] = params.date;
+
+    //category
+    if(checkUndefined(params.category) !== 'undefined')
+      query["category"] = / + params.category + /i;
+  }
+  console.log(util.inspect(query, { showHidden: true, depth: null }));
+  return query;
 }
